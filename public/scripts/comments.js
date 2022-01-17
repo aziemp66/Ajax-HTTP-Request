@@ -23,16 +23,27 @@ function createCommentsList(comments) {
 
 async function fetchCommentsForPosts() {
     const postId = loadCommentsBtnElement.dataset.postid;
-    const response = await fetch(`/posts/${postId}/comments`);
-    const responseData = await response.json();
 
-    if (responseData && responseData.length > 0) {
-        const commentsListElement = createCommentsList(responseData);
-        commentSectionElement.innerHTML = "";
-        commentSectionElement.appendChild(commentsListElement);
-    } else {
-        commentSectionElement.firstElementChild.textContent =
-            "We could not find any comments. Maybe add one?";
+    try {
+        const response = await fetch(`/posts/${postId}/comments`);
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            alert("Fetching Comments Failed!!!");
+            return;
+        }
+
+        if (responseData && responseData.length > 0) {
+            const commentsListElement = createCommentsList(responseData);
+            commentSectionElement.innerHTML = "";
+            commentSectionElement.appendChild(commentsListElement);
+        } else {
+            commentSectionElement.firstElementChild.textContent =
+                "We could not find any comments. Maybe add one?";
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Getting Comments Failed");
     }
 }
 
@@ -45,15 +56,24 @@ async function saveComment(event) {
 
     const comment = { title: enteredTitle, text: enteredText };
 
-    const response = await fetch(`/posts/${postId}/comments`, {
-        method: "POST",
-        body: JSON.stringify(comment),
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
+    try {
+        const response = await fetch(`/posts/${postId}/comments`, {
+            method: "POST",
+            body: JSON.stringify(comment),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
 
-    fetchCommentsForPosts();
+        if (response.ok) {
+            fetchCommentsForPosts();
+        } else {
+            alert("Could not send Comment");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Could not send request - maybe try again later!");
+    }
 }
 
 loadCommentsBtnElement.addEventListener("click", fetchCommentsForPosts);
